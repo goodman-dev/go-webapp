@@ -1,14 +1,34 @@
 package main
 
 import (
-	"log"
+	"flag"
+	"log/slog"
 	"net/http"
+	"os"
 )
+
+type config struct {
+	addr string
+}
 
 func main() {
 
+	var cfg config
+
+	// Parse cmd line flags into our config struct
+	flag.StringVar(&cfg.addr, "addr", ":4000", "HTTP network address")
+	flag.Parse()
+
 	// Create a new http request multiplexer & register a route
 	mux := http.NewServeMux()
+
+	// Set up our logger
+	// ¡NOTE! The Logger created here is concurrency-safe, as long as we're
+	// we're using the same slog.Logger instance for a destination
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level:     slog.LevelDebug,
+		AddSource: true,
+	}))
 
 	// ¡NOTE! servemux treates the route pattern "/" like a catch-all
 	// In fact, this applies to all trailing-slash paths
@@ -26,12 +46,13 @@ func main() {
 	fileServer := http.FileServer(http.Dir("./ui/static/"))
 	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
 
-	log.Print("starting server on port 4000")
+	// flag.String returns a pointer to a string, so dereference it
+	logger.Info("starting server", slog.Group("request", slog.String("addr", cfg.addr)))
 
 	// Start our web server
-	// Omitting the host (host:port) means w elisten on all interfaces
-	// If it returns an error, make sure we log it
-	err := http.ListenAndServe(":4000", mux)
-	log.Fatal(err)
+	err := http.ListenAndServe(cfg.addr, mux)
+	// When app is terminated - or if we fail to start - log cause & exit
+	logger.Error(err.Error())
+	os.Exit(1)
 
 }
