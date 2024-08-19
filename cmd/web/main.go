@@ -11,6 +11,9 @@ type config struct {
 	addr string
 }
 
+// Create an application struct for dependency injection
+// If our handlers are spread across packages, use a closure pattern
+// like https://gist.github.com/alexedwards/5cd712192b4831058b21
 type application struct {
 	logger *slog.Logger
 	cfg    *config
