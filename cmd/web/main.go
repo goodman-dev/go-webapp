@@ -20,6 +20,12 @@ func main() {
 	mux.HandleFunc("GET /snippet/create", snippetCreateForm)
 	mux.HandleFunc("POST /snippet/create", snippetCreate)
 
+	// Create a file handler that serves from the ./ui/static dir,
+	// and strip /static/ from the start of the URL path so that e.g.,
+	// <host>/static/css/main.css reaches ./ui/static/css/main.css
+	fileServer := http.FileServer(http.Dir("./ui/static/"))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", fileServer))
+
 	log.Print("starting server on port 4000")
 
 	// Start our web server
