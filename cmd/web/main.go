@@ -11,6 +11,11 @@ type config struct {
 	addr string
 }
 
+type application struct {
+	logger *slog.Logger
+	cfg    *config
+}
+
 func main() {
 
 	var cfg config
@@ -30,15 +35,20 @@ func main() {
 		AddSource: true,
 	}))
 
+	app := application{
+		logger: logger,
+		cfg:    &cfg,
+	}
+
 	// ¡NOTE! servemux treates the route pattern "/" like a catch-all
 	// In fact, this applies to all trailing-slash paths
 	// So we can use regex sequence {$} to prevent this
 	// When paths match multiple routes, "the most specific route wins"
 
-	mux.HandleFunc("GET /{$}", home)
-	mux.HandleFunc("GET /snippet/view/{id}", snippetView)
-	mux.HandleFunc("GET /snippet/create", snippetCreateForm)
-	mux.HandleFunc("POST /snippet/create", snippetCreate)
+	mux.HandleFunc("GET /{$}", app.home)
+	mux.HandleFunc("GET /snippet/view/{id}", app.snippetView)
+	mux.HandleFunc("GET /snippet/create", app.snippetCreateForm)
+	mux.HandleFunc("POST /snippet/create", app.snippetCreate)
 
 	// Create a file handler that serves from the ./ui/static dir,
 	// and strip /static/ from the start of the URL path so that e.g.,
