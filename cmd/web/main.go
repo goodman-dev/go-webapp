@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/goodman-dev/go-webapp/internal/models"
 
@@ -78,6 +79,12 @@ func openDB(dsn string, logger *slog.Logger) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Configure connection pool
+	// https://www.alexedwards.net/blog/configuring-sqldb
+	db.SetMaxOpenConns(20)
+	db.SetMaxIdleConns(15)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	// Check the connection
 	err = db.Ping()
