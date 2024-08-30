@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strconv"
 
@@ -63,9 +64,27 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// %v prints in the default format when printing structs,
-	// the + adds field names https://pkg.go.dev/fmt
-	fmt.Fprintf(w, "%+v", snippet)
+	files := []string{
+		"./ui/html/base.html.tmpl",
+		"./ui/html/partials/nav.html.tmpl",
+		"./ui/html/pages/view.html.tmpl",
+	}
+
+	// parse the template files
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, r, err)
+		return
+	}
+
+	data := templateData{Snippet: snippet}
+
+	// execute the template
+	err = ts.ExecuteTemplate(w, "base", data)
+	if err != nil {
+		app.serverError(w, r, err)
+	}
+
 }
 
 func (app *application) snippetCreateForm(w http.ResponseWriter, r *http.Request) {
